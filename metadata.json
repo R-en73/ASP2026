@@ -1,0 +1,6 @@
+{
+  "name": "ASO 卒業進級制作展",
+  "description": "卒業進級制作展のブース紹介および作品投稿・イベントスケジュール機能を提供するWebアプリケーション。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

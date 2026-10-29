@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile Touch & Scrollbar Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Authentic Transparent Acrylic Glass Texture */
+.acrylic-bottom-bar {
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(26px) saturate(190%);
+  -webkit-backdrop-filter: blur(26px) saturate(190%);
+  border-top: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 
+    0 -8px 30px 0 rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Acrylic Specular Sheen line across the top edge */
+.acrylic-sheen {
+  background: linear-gradient(
+    90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%, 
+    rgba(255, 255, 255, 0.95) 50%, 
+    rgba(255, 255, 255, 0.6) 80%, 
+    transparent 100%
+  );
+}
+
+/* Floating Acrylic Pill Card */
+.acrylic-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    0 10px 30px -5px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
