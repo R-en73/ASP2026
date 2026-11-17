@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, setDoc, query, where, writeBatch, deleteDoc } from 'firebase/firestore';
 import { getDb } from './firebase';
 import { User, BoothDetail, Room, Course, SystemSettings, BoothComment, Vote, NewsItem } from '../types';
+import { deletePdfChunks } from './pdfChunks';
 
 // Clear any old zombie user caches from previous versions
 try {
@@ -389,6 +390,21 @@ export const deleteBooth = async (id: string) => {
   if (!id) return;
   try {
     const db = await getDb();
+    // Clean up Firestore-chunk-stored PDFs owned by this booth before deleting it
+    try {
+      const existing = await getDoc(doc(db, 'boothDetails', id));
+      if (existing.exists()) {
+        const pdfs = (existing.data() as BoothDetail).pdfs || [];
+        for (const p of pdfs) {
+          const url = typeof p === 'string' ? p : p.url;
+          if (url && url.startsWith('pdfstore:')) {
+            await deletePdfChunks(url.slice('pdfstore:'.length));
+          }
+        }
+      }
+    } catch (e) {
+      console.error('deleteBooth pdf cleanup error:', e);
+    }
     await deleteDoc(doc(db, 'boothDetails', id));
   } catch (e) {
     console.error('deleteBooth error:', e);

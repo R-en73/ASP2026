@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { saveBooth, getBoothById, getBoothByUserId, getUserOwnedBooth, deleteBooth, updateUser } from '../lib/db';
+import { uploadPdf, uploadFileToStorage } from '../lib/upload';
 import toast from 'react-hot-toast';
 
 export default function PostWork() {
@@ -185,24 +186,13 @@ export default function PostWork() {
       }
       setIsUploadingImage(true);
       try {
-        // Try uploading to server first
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body: uploadFormData });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.url) {
-            setFormData(prev => ({ ...prev, thumbnailUrl: data.url }));
-            toast.success('サムネイル画像を設定しました');
-            setIsUploadingImage(false);
-            return;
-          }
-        }
-        // Fallback to client-side compressed data URL
-        const compressedDataUrl = await compressImageToDataUrl(file);
-        setFormData(prev => ({ ...prev, thumbnailUrl: compressedDataUrl }));
+        // Firebase Storage に直接アップロード（サーバー不要）
+        const uid = user?.id || user?.uid || 'guest';
+        const res = await uploadFileToStorage(file, 'thumbnails', uid);
+        setFormData(prev => ({ ...prev, thumbnailUrl: res.url }));
         toast.success('サムネイル画像を設定しました');
       } catch (err) {
+        // Fallback to client-side compressed data URL
         try {
           const compressedDataUrl = await compressImageToDataUrl(file);
           setFormData(prev => ({ ...prev, thumbnailUrl: compressedDataUrl }));
@@ -222,45 +212,50 @@ export default function PostWork() {
       }
       
       let currentIndex = index;
-      const newPdfs = [...formData.pdfs];
+      const uid = user?.id || user?.uid || 'guest';
       
       setUploadingPdfIndex(index);
       
       try {
         let uploadedCount = 0;
+        let failedCount = 0;
         for (const file of pdfFiles) {
           if (currentIndex >= 10) break;
           
-          const uploadFormData = new FormData();
-          uploadFormData.append('file', file);
-          const res = await fetch('/api/upload', { method: 'POST', body: uploadFormData });
-          if (!res.ok) throw new Error('Upload failed');
-          const data = await res.json();
-          
-          // Use functional state update to prevent race conditions when user types while uploading
-          setFormData(prev => {
-            const nextPdfs = [...prev.pdfs];
-            // Preserve the user's edits if they changed the name while this was uploading
-            const currentName = nextPdfs[currentIndex]?.name;
-            const finalName = currentName && currentName !== '' ? currentName : file.name;
+          try {
+            // Firebase Storage に直接アップロード（サーバー不要）
+            const res = await uploadPdf(file, uid);
             
-            nextPdfs[currentIndex] = { name: finalName, url: data.url };
+            // Use functional state update to prevent race conditions when user types while uploading
+            setFormData(prev => {
+              const nextPdfs = [...prev.pdfs];
+              // Preserve the user's edits if they changed the name while this was uploading
+              const currentName = nextPdfs[currentIndex]?.name;
+              const finalName = currentName && currentName !== '' ? currentName : res.name;
+              
+              nextPdfs[currentIndex] = { name: finalName, url: res.url };
+              
+              // Add next empty slot if needed
+              if (currentIndex + 1 < 10 && currentIndex + 1 >= nextPdfs.length && uploadedCount + 1 < pdfFiles.length) {
+                nextPdfs.push({ name: '', url: '' });
+              }
+              return { ...prev, pdfs: nextPdfs };
+            });
             
-            // Add next empty slot if needed
-            if (currentIndex + 1 < 10 && currentIndex + 1 >= nextPdfs.length && uploadedCount + 1 < pdfFiles.length) {
-              nextPdfs.push({ name: '', url: '' });
-            }
-            return { ...prev, pdfs: nextPdfs };
-          });
-          
-          currentIndex++;
-          uploadedCount++;
+            currentIndex++;
+            uploadedCount++;
+          } catch (err) {
+            console.error('PDF upload failed:', file.name, err);
+            failedCount++;
+            toast.error(`「${file.name}」のアップロードに失敗しました`);
+          }
         }
         
-        toast.success(uploadedCount > 1 ? `${uploadedCount}件のPDFをアップロードしました` : 'アップロードが完了しました');
-      } catch (err) {
-        console.error(err);
-        toast.error('一部のアップロードに失敗しました');
+        if (uploadedCount > 0) {
+          toast.success(uploadedCount > 1 ? `${uploadedCount}件のPDFをアップロードしました` : 'アップロードが完了しました');
+        } else if (failedCount > 0) {
+          toast.error('PDFをアップロードできませんでした');
+        }
       } finally {
         setUploadingPdfIndex(null);
       }
@@ -852,7 +847,7 @@ export default function PostWork() {
                                   <div className="w-6 h-6 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-1"></div>
                                   アップロード中...
                                 </div>
-                              ) : pdf && pdf.url && (pdf.url.startsWith('data:') || pdf.url.startsWith('/uploads/')) ? (
+                              ) : pdf && pdf.url && (pdf.url.startsWith('data:') || pdf.url.startsWith('/uploads/') || pdf.url.startsWith('pdfstore:') || pdf.url.includes('firebasestorage.googleapis.com')) ? (
                                 <div className="text-sm font-bold text-cyan-600 flex flex-col items-center justify-center gap-2">
                                   <CheckCircle2 className="w-6 h-6 text-cyan-500 mb-1" />
                                   PDFをセットしました

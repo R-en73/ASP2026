@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { BoothDetail, BoothComment } from '../types';
 import { Heart, MessageSquare, ArrowLeft, ExternalLink, Video, FileText, Sparkles, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PdfLink from '../components/PdfLink';
 import { 
   hasVisitorLikedBooth, 
   getVisitorLikesCount, 
@@ -433,26 +434,7 @@ export default function BoothDetailView() {
                   const pdfUrl = typeof pdfItem === 'string' ? pdfItem : pdfItem.url;
                   const pdfName = typeof pdfItem === 'string' ? `資料 ${i + 1}` : (pdfItem.name || `資料 ${i + 1}`);
                   return (
-                    <a 
-                      key={i} 
-                      href={pdfUrl} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="flex items-center w-full bg-white border border-slate-200 hover:border-red-300 hover:shadow-md transition-all p-3.5 sm:p-4 rounded-2xl group min-h-[64px]"
-                    >
-                      <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-red-500 group-hover:text-white text-red-500 transition-colors">
-                        <FileText className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1 min-w-0 px-3.5 sm:px-5">
-                        <h4 className="font-bold text-slate-800 text-sm sm:text-base break-words group-hover:text-red-600 transition-colors leading-snug">
-                          {pdfName}
-                        </h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">PDFを開く</p>
-                      </div>
-                      <div className="shrink-0 w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors">
-                        <ExternalLink className="w-4 h-4" />
-                      </div>
-                    </a>
+                    <PdfLink key={i} url={pdfUrl} name={pdfName} />
                   );
                 })}
               </div>
