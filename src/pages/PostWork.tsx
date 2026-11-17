@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { saveBooth, getBoothById, getBoothByUserId, getUserOwnedBooth, deleteBooth, updateUser } from '../lib/db';
-import { uploadPdf, uploadFileToStorage } from '../lib/upload';
+import { uploadPdf, tryUploadToStorage } from '../lib/upload';
 import toast from 'react-hot-toast';
 
 export default function PostWork() {
@@ -186,11 +186,18 @@ export default function PostWork() {
       }
       setIsUploadingImage(true);
       try {
-        // Firebase Storage に直接アップロード（サーバー不要）
+        // Firebase Storage に直接アップロード（サーバー不要）。未設定なら即フォールバック
         const uid = user?.id || user?.uid || 'guest';
-        const res = await uploadFileToStorage(file, 'thumbnails', uid);
-        setFormData(prev => ({ ...prev, thumbnailUrl: res.url }));
-        toast.success('サムネイル画像を設定しました');
+        const storageUrl = await tryUploadToStorage(file, 'thumbnails', uid);
+        if (storageUrl) {
+          setFormData(prev => ({ ...prev, thumbnailUrl: storageUrl }));
+          toast.success('サムネイル画像を設定しました');
+        } else {
+          // Fallback to client-side compressed data URL
+          const compressedDataUrl = await compressImageToDataUrl(file);
+          setFormData(prev => ({ ...prev, thumbnailUrl: compressedDataUrl }));
+          toast.success('サムネイル画像を設定しました');
+        }
       } catch (err) {
         // Fallback to client-side compressed data URL
         try {
@@ -247,7 +254,8 @@ export default function PostWork() {
           } catch (err) {
             console.error('PDF upload failed:', file.name, err);
             failedCount++;
-            toast.error(`「${file.name}」のアップロードに失敗しました`);
+            const message = err instanceof Error && err.message ? err.message : 'アップロードに失敗しました';
+            toast.error(`「${file.name}」: ${message}`);
           }
         }
         

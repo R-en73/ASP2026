@@ -1,6 +1,10 @@
 /**
  * ブラウザから Firebase Storage へ直接ファイルをアップロードするユーティリティ。
  * サーバー（/api/upload）に依存しないため、GitHub Pages などの静的ホスティングでも動作します。
+ *
+ * - Firebase Storage が利用できるかどうかを初回失敗時に判定してキャッシュし、
+ *   以降のアップロードでは無駄な待ち時間なしで Firestore 分割保存へ切り替えます。
+ * - Storage 試行にはタイムアウトを設け、未設定環境でも即座にフォールバックします。
  */
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getAppStorage } from './firebase';
@@ -9,6 +13,31 @@ import { storePdfChunks, PDF_STORE_PREFIX } from './pdfChunks';
 export interface UploadResult {
   url: string;
   name: string;
+}
+
+// Storage 試行のタイムアウト（ms）
+const STORAGE_TIMEOUT_MS = 5000;
+
+// セッション内で Storage が利用可能かどうかのキャッシュ（null = 未判定）
+let storageUsable: boolean | null = null;
+
+/**
+ * Promise にタイムアウトを付与する
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Storage request timed out')), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
 }
 
 /**
@@ -41,7 +70,7 @@ export async function uploadFileToStorage(file: File, folder: string, uid: strin
 }
 
 /**
- * ファイルを data URL に変換する（小さな PDF のフォールバック用）
+ * ファイルを base64 data URL に変換する（Firestore 分割保存のフォールバック用）
  */
 export function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -53,19 +82,53 @@ export function fileToDataUrl(file: File): Promise<string> {
 }
 
 /**
- * PDF のアップロード。
- * 1. Firebase Storage にアップロードを試みる（Storage 有効化後はここが使われる）
- * 2. Storage が使えない環境では Firestore にチャンク分割で保存し `pdfstore:<pdfId>` 参照を返す
+ * Storage が使える場合のみアップロードし、URL を返す。使えない場合は null。
+ * 一度失敗（またはタイムアウト）するとセッション内は常に null を返す。
  */
-export async function uploadPdf(file: File, uid: string): Promise<UploadResult> {
+export async function tryUploadToStorage(file: File, folder: string, uid: string): Promise<string | null> {
+  if (storageUsable === false) return null;
   try {
-    return await uploadFileToStorage(file, 'pdfs', uid);
+    const res = await withTimeout(uploadFileToStorage(file, folder, uid), STORAGE_TIMEOUT_MS);
+    storageUsable = true;
+    return res.url;
   } catch (err) {
-    console.warn('Firebase Storage upload failed, falling back to Firestore chunk storage:', err);
-    const pdfId = `pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    const dataUrl = await fileToDataUrl(file);
-    const base64Data = dataUrl.slice(dataUrl.indexOf(',') + 1);
-    await storePdfChunks(pdfId, file.name, base64Data, uid);
-    return { url: `${PDF_STORE_PREFIX}${pdfId}`, name: file.name };
+    storageUsable = false;
+    console.warn('Firebase Storage unavailable, using Firestore fallback:', err);
+    return null;
   }
 }
+
+/**
+ * PDF を Firestore に保存し、`pdfstore:<pdfId>` 参照を返す
+ * （小PDFは1ドキュメント=書き込み1回、大PDFはチャンク分割）
+ */
+async function storePdfInFirestore(file: File, uid: string): Promise<UploadResult> {
+  const pdfId = `pdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const dataUrl = await fileToDataUrl(file);
+  const base64Data = dataUrl.slice(dataUrl.indexOf(',') + 1);
+  await storePdfChunks(pdfId, file.name, base64Data, uid);
+  return { url: `${PDF_STORE_PREFIX}${pdfId}`, name: file.name };
+}
+
+/**
+ * PDF のアップロード。
+ * 1. Firebase Storage にアップロード（Storage 有効時。100人規模でも高速・クォータ非消費）
+ * 2. Storage 未設定時は Firestore に保存（小PDFは書き込み1回、大PDFはチャンク分割）
+ */
+export async function uploadPdf(file: File, uid: string): Promise<UploadResult> {
+  const storageUrl = await tryUploadToStorage(file, 'pdfs', uid);
+  if (storageUrl) {
+    return { url: storageUrl, name: file.name };
+  }
+  try {
+    return await storePdfInFirestore(file, uid);
+  } catch (err) {
+    const code = (err as any)?.code || (err as any)?.message || '';
+    if (String(code).includes('resource-exhausted')) {
+      throw new Error('Firebase の書き込み上限に達しています。時間をおいて再試行するか、管理者に Firebase Storage の有効化を依頼してください。');
+    }
+    console.error('storePdfInFirestore error:', err);
+    throw new Error('PDFの保存に失敗しました。もう一度お試しください。');
+  }
+}
+
