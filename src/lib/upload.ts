@@ -125,7 +125,7 @@ export async function uploadPdf(file: File, uid: string): Promise<UploadResult> 
   } catch (err) {
     const code = (err as any)?.code || (err as any)?.message || '';
     if (String(code).includes('resource-exhausted')) {
-      throw new Error('Firebase の書き込み上限に達しています。時間をおいて再試行するか、管理者に Firebase Storage の有効化を依頼してください。');
+      throw new Error('Firebase の書き込み上限（無料枠・日次）に達しています。数時間おいて再度お試しください。');
     }
     console.error('storePdfInFirestore error:', err);
     throw new Error('PDFの保存に失敗しました。もう一度お試しください。');
