@@ -9,8 +9,9 @@
 
 `https://R-en73.github.io/ASP2026/`
 
-GitHub Pages は静的ホスティングのため、作品投稿に使う `/api/upload` と OGP 取得用の
-`/api/ogp` は別途サーバーへ配置する必要があります。Firebase の認証を使う場合は、
+作品・PDF のアップロードはサーバーを介さず Firebase に直接保存します（PDF は Firebase Storage 優先、
+Storage 未設定時は Firestore へ分割保存）。OGP 取得用の `/api/ogp` のみサーバーが必要なため、
+必要に応じて別途サーバーへ配置してください。Firebase の認証を使う場合は、
 公開 URL を Firebase Authentication の承認済みドメインにも追加してください。
 
 ## ローカルで実行
