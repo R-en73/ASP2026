@@ -833,6 +833,7 @@ export default function PostWork() {
                           <button type="button" onClick={() => addArrayItem('pdfs')} className="text-sm font-bold text-cyan-600 hover:text-cyan-700 bg-cyan-50 px-3 py-1 rounded-full">+ 追加</button>
                         )}
                       </div>
+                      <p className="text-xs text-slate-400 font-medium -mt-1 mb-3">サイズ上限なし（大きなPDFはアップロードに時間がかかる場合があります）</p>
                       
                       <div className="space-y-4">
                         {formData.pdfs.map((pdf, index) => (

@@ -6,7 +6,9 @@
  *
  * 100人規模でも Firestore 無料枠の書き込みクォータを節約できるよう、2段階で保存します:
  * - 小さめの PDF（約640KBまで）: 1ドキュメント = 書き込み1回で保存
- * - 大きな PDF: base64 チャンクに分割し、writeBatch で一括保存（1回のリクエスト）
+ * - 大きな PDF: base64 チャンクに分割し、writeBatch で一括保存
+ *   さらに10MB超などの大容量は、Firestore のバッチリクエスト上限(10MiB)を考慮して
+ *   複数バッチに分割して保存するため、実質「上限なし」でアップロードできます。
  *
  * - 保存先: `pdfs/{pdfId}` （メタデータ / 小PDFは data フィールドに格納）
  *           `pdfs/{pdfId}/chunks/{n}` （大PDFのチャンク）
@@ -23,6 +25,9 @@ const CHUNK_CHARS = 700 * 1024;
 // 単一ドキュメントで保存できる base64 文字数の上限（書き込み1回で済ませる）
 const SINGLE_DOC_MAX_BASE64 = 850 * 1024;
 
+// 1回の writeBatch に含める最大 base64 サイズ（Firestore リクエスト上限 10MiB を考慮した安全値）
+const BATCH_MAX_BASE64 = 4 * 1024 * 1024;
+
 export interface PdfChunkMeta {
   name: string;
   userId: string;
@@ -35,7 +40,7 @@ export interface PdfChunkMeta {
 
 /**
  * base64 データを PDF ドキュメントとして保存する。
- * 小PDFは1ドキュメント、大PDFはチャンク分割 + writeBatch で保存する。
+ * 小PDFは1ドキュメント、大PDFはチャンク分割 + 複数 writeBatch で保存（上限なし）。
  */
 export async function storePdfChunks(
   pdfId: string,
@@ -60,8 +65,26 @@ export async function storePdfChunks(
     return;
   }
 
-  // 大PDF: チャンク分割 + writeBatch 一括コミット（1回のリクエスト）
+  // 大PDF: チャンク分割。1バッチあたりのサイズを抑えて複数バッチで保存（上限なし）
   const total = Math.max(1, Math.ceil(base64Data.length / CHUNK_CHARS));
+  const chunksCol = collection(db, 'pdfs', pdfId, 'chunks');
+
+  let start = 0;
+  while (start < total) {
+    const batch = writeBatch(db);
+    let batchSize = 0;
+    let i = start;
+    for (; i < total && batchSize < BATCH_MAX_BASE64; i++) {
+      batch.set(doc(chunksCol, String(i)), {
+        data: base64Data.slice(i * CHUNK_CHARS, (i + 1) * CHUNK_CHARS),
+      });
+      batchSize += CHUNK_CHARS;
+    }
+    await batch.commit();
+    start = i;
+  }
+
+  // メタデータは全チャンク保存後に書き込み（途中失敗時は不完全なPDFを参照させない）
   const meta: PdfChunkMeta = {
     name,
     userId,
@@ -69,17 +92,7 @@ export async function storePdfChunks(
     contentType: 'application/pdf',
     createdAt,
   };
-
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'pdfs', pdfId), meta);
-
-  const chunksCol = collection(db, 'pdfs', pdfId, 'chunks');
-  for (let i = 0; i < total; i++) {
-    batch.set(doc(chunksCol, String(i)), {
-      data: base64Data.slice(i * CHUNK_CHARS, (i + 1) * CHUNK_CHARS),
-    });
-  }
-  await batch.commit();
+  await setDoc(doc(db, 'pdfs', pdfId), meta);
 }
 
 /**
