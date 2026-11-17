@@ -1,12 +1,14 @@
 import React from 'react';
 import { MapPin, Phone, Train, Bus, Car, Utensils, Bed, ChevronRight, ExternalLink, Navigation } from 'lucide-react';
 
+const backgroundImageUrl = `${import.meta.env.BASE_URL}背景-1.jpg`;
+
 export default function Access() {
   return (
     <div 
       className="min-h-screen relative overflow-hidden pb-24 sm:pb-32 bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: "url('/背景-1.jpg')"
+        backgroundImage: `url('${backgroundImageUrl}')`
       }}
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14">

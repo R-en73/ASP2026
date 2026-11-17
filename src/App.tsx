@@ -25,8 +25,12 @@ import News from './pages/News';
 // ※ 右側の男性イラストは後から学校の公式キャラクター画像に差し替え可能です。
 // 差し替える場合は下記の画像パスを変更するか、管理画面のメインビジュアルを設定してください。
 // ============================================================================
-export const HERO_CHARACTER_IMAGE = '/images/hero_character.jpg';
-export const HERO_CRYSTAL_CUBE_IMAGE = '/images/crystal_cube.jpg';
+// public/ 配下の静的アセットはビルド時の BASE_URL（/ASP2026/ など）を必ず先頭に付ける
+const assetUrl = (path: string): string =>
+  `${import.meta.env.BASE_URL}${String(path).replace(/^\//, '')}`;
+
+export const HERO_CHARACTER_IMAGE = assetUrl('images/hero_character.jpg');
+export const HERO_CRYSTAL_CUBE_IMAGE = assetUrl('images/crystal_cube.jpg');
 
 const HomeBoothThumbnail: React.FC<{ b: BoothDetail }> = ({ b }) => {
   const [error, setError] = useState(false);
@@ -96,7 +100,7 @@ const Home = () => {
       code: 'GAME',
       name: 'ゲームコース',
       catchphrase: '遊びの中に、新しい体験を。',
-      image: '/images/course_game.jpg',
+      image: assetUrl('images/course_game.jpg'),
       query: 'ゲーム'
     },
     {
@@ -104,7 +108,7 @@ const Home = () => {
       code: 'ILLUST',
       name: 'イラストコース',
       catchphrase: '想像を、色で描く。',
-      image: '/images/course_illust.jpg',
+      image: assetUrl('images/course_illust.jpg'),
       query: 'イラスト'
     },
     {
@@ -112,7 +116,7 @@ const Home = () => {
       code: 'IT',
       name: '情報系ITコース',
       catchphrase: 'テクノロジーで未来をつくる。',
-      image: '/images/course_it.jpg',
+      image: assetUrl('images/course_it.jpg'),
       query: 'IT'
     },
     {
@@ -120,7 +124,7 @@ const Home = () => {
       code: '3DCG',
       name: '3DCGコース',
       catchphrase: 'リアルと想像のあいだで。',
-      image: '/images/course_3dcg.jpg',
+      image: assetUrl('images/course_3dcg.jpg'),
       query: '3DCG'
     }
   ];
@@ -130,25 +134,25 @@ const Home = () => {
       id: 'p1',
       title: '青空と丘の景観',
       author: '学生作品',
-      image: '/images/pickup_1.jpg'
+      image: assetUrl('images/pickup_1.jpg')
     },
     {
       id: 'p2',
       title: 'CYBER GIRL 2026',
       author: '学生作品',
-      image: '/images/pickup_2.jpg'
+      image: assetUrl('images/pickup_2.jpg')
     },
     {
       id: 'p3',
       title: 'Cloud Analytics UI',
       author: '学生作品',
-      image: '/images/pickup_3.jpg'
+      image: assetUrl('images/pickup_3.jpg')
     },
     {
       id: 'p4',
       title: '幻想都市の騎士',
       author: '学生作品',
-      image: '/images/pickup_4.jpg'
+      image: assetUrl('images/pickup_4.jpg')
     }
   ];
 
