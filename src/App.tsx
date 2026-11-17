@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
@@ -7,18 +7,25 @@ import { SystemSettings, BoothDetail, NewsItem } from './types';
 import { 
   ArrowRight, MapPin, Sparkles, Calendar, Clock, 
   Gamepad2, Palette, Code2, Film, ChevronRight, CheckCircle2,
-  ExternalLink, Star
+  ExternalLink, Star, Loader2
 } from 'lucide-react';
 
-// Pages placeholders
-import Login from './pages/Login';
-import Schedule from './pages/Schedule';
-import Booths from './pages/Booths';
-import BoothDetailView from './pages/BoothDetail';
-import PostWork from './pages/PostWork';
-import Admin from './pages/Admin';
-import Access from './pages/Access';
-import News from './pages/News';
+// ページはコード分割し、アクセス時に遅延読み込み（初期表示のJS量を削減）
+const Login = lazy(() => import('./pages/Login'));
+const Schedule = lazy(() => import('./pages/Schedule'));
+const Booths = lazy(() => import('./pages/Booths'));
+const BoothDetailView = lazy(() => import('./pages/BoothDetail'));
+const PostWork = lazy(() => import('./pages/PostWork'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Access = lazy(() => import('./pages/Access'));
+const News = lazy(() => import('./pages/News'));
+
+// ルート切替時の読み込み中表示
+const PageLoading = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+  </div>
+);
 
 // ============================================================================
 // 学校公式キャラクター差し替え用設定 (School Official Character Configuration)
@@ -660,24 +667,26 @@ export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<Home />} />
-              <Route path="booths" element={<Booths />} />
-              <Route path="booths/:id" element={<BoothDetailView />} />
-              <Route path="schedule" element={<Schedule />} />
-              <Route path="news" element={<News />} />
-              <Route path="news/:id" element={<News />} />
-              <Route path="post" element={<PostWork />} />
-              <Route path="admin" element={<Admin />} />
-              <Route path="access" element={<Access />} />
-              <Route path="*" element={<NotFound />} />
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<AppLayout />}>
+                <Route index element={<Home />} />
+                <Route path="booths" element={<Booths />} />
+                <Route path="booths/:id" element={<BoothDetailView />} />
+                <Route path="schedule" element={<Schedule />} />
+                <Route path="news" element={<News />} />
+                <Route path="news/:id" element={<News />} />
+                <Route path="post" element={<PostWork />} />
+                <Route path="admin" element={<Admin />} />
+                <Route path="access" element={<Access />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
+          </Routes>
+        </Suspense>
       </HashRouter>
     </AuthProvider>
   );

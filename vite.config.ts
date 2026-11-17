@@ -12,4 +12,20 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
   },
+  build: {
+    target: 'es2020',
+    minify: 'esbuild',
+    cssCodeSplit: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // ベンダーライブラリを分割して長期キャッシュ + 並列読み込みを実現
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'react-hot-toast', 'clsx'],
+          'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'icons': ['lucide-react'],
+        },
+      },
+    },
+  },
 });
