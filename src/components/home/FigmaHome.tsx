@@ -50,13 +50,19 @@ export default function FigmaHome() {
     frame = requestAnimationFrame(raf);
 
     const context = gsap.context(() => {
-      gsap.from('.figma-hero-copy', {
-        y: 36,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: 'power3.out',
-      });
+      const entrance = gsap.timeline({ defaults: { ease: 'power3.out' } });
+      entrance
+        .from('.figma-header', { y: -24, opacity: 0, duration: 0.55 })
+        .from('.figma-hero-copy > *', { y: 28, opacity: 0, duration: 0.7, stagger: 0.08 }, '-=0.28')
+        .from('.figma-hero-visual', { x: 70, opacity: 0, duration: 0.95 }, '-=0.72')
+        .from('.figma-speed-lines', { scaleX: 1.35, opacity: 0, duration: 0.8 }, '-=0.82')
+        .from('.figma-course-card', {
+          y: 24,
+          opacity: 0,
+          duration: 0.55,
+          stagger: 0.08,
+          scrollTrigger: { trigger: '.figma-course-grid', start: 'top 88%', once: true },
+        }, '-=0.2');
 
       gsap.utils.toArray<HTMLElement>('.figma-reveal').forEach((element) => {
         gsap.from(element, {
@@ -279,6 +285,18 @@ export default function FigmaHome() {
             </div>
           </div>
         </section>
+
+        <footer className="figma-camp-footer">
+          <div className="figma-camp-footer-brand">
+            <span className="figma-logo-mark">ASO</span>
+            <div>
+              <strong>ASO高等部 卒業進級制作展2026</strong>
+              <span>ASO Graduation &amp; Advancement Exhibition2026</span>
+            </div>
+          </div>
+          <p>つくることで、つながる未来へ。</p>
+          <small>© 2026 ASO High School. All Rights Reserved.</small>
+        </footer>
 
         {featuredBooths.length > 0 && (
           <section className="figma-featured figma-reveal">

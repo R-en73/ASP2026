@@ -164,3 +164,155 @@ body {
   .figma-featured-grid { grid-template-columns:repeat(2,1fr); }
   .figma-featured { padding:20px; }
 }
+
+.mochiy-pop-one-regular,
+.figma-hero-text h1,
+.figma-about h2,
+.figma-exhibition h2,
+.figma-information h2,
+.figma-featured h2 {
+  font-family:"Mochiy Pop One",sans-serif;
+  font-weight:400;
+  font-style:normal;
+}
+
+.figma-featured {
+  display:none;
+}
+
+.figma-camp-footer {
+  min-height:170px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  grid-template-rows:auto auto;
+  align-items:center;
+  column-gap:24px;
+  padding:28px max(4vw,24px);
+  color:white;
+  background:linear-gradient(120deg,#153d9d 0 46%,#2257b8 46% 62%,#1fc0ec 62% 78%,#67dd72 78%);
+}
+
+.figma-camp-footer-brand {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.figma-camp-footer-brand .figma-logo-mark {
+  color:white;
+  text-shadow:3px 0 #72dc67;
+  font-size:38px;
+}
+
+.figma-camp-footer-brand div {
+  display:grid;
+  gap:5px;
+  font-size:11px;
+}
+
+.figma-camp-footer-brand div span {
+  font-size:8px;
+  opacity:.85;
+}
+
+.figma-camp-footer>p {
+  grid-column:2;
+  grid-row:1;
+  font-family:"Mochiy Pop One",sans-serif;
+  font-size:14px;
+  margin:0;
+  text-align:right;
+}
+
+.figma-camp-footer>small {
+  grid-column:1/-1;
+  padding-top:18px;
+  border-top:1px solid rgba(255,255,255,.38);
+  font-size:9px;
+  text-align:center;
+}
+
+@media(max-width:1024px) and (min-width:721px) {
+  .figma-header { height:64px; }
+  .figma-hero { min-height:500px; padding-top:82px; padding-bottom:20px; }
+  .figma-hero-visual { min-height:430px; }
+  .figma-hero-text h1 { font-size:64px; }
+  .figma-about { min-height:290px; }
+  .figma-about-copy { padding:42px 7%; }
+  .figma-about-visual { min-height:290px; }
+  .figma-exhibition { padding:38px 0; margin-bottom:28px; }
+  .figma-course-card { height:250px; }
+  .figma-information { min-height:190px; margin-bottom:0; }
+  .figma-camp-footer { min-height:120px; }
+}
+
+@media(max-width:720px) {
+  .figma-home { background:#edf9ff; }
+  .figma-header { position:absolute; height:58px; }
+  .figma-hero {
+    min-height:410px;
+    grid-template-columns:1fr;
+    align-items:start;
+    padding:78px 16px 18px;
+  }
+  .figma-hero-copy { z-index:8; }
+  .figma-eyebrow { font-size:8px; margin-bottom:8px; }
+  .figma-hero-text h1 {
+    max-width:220px;
+    font-size:38px;
+    line-height:.98;
+    text-shadow:2px 2px 0 rgba(91,219,255,.28);
+  }
+  .figma-hero-text h1 strong { font-size:1.12em; }
+  .figma-hero-tagline { margin:12px 0 8px; font-size:12px; }
+  .figma-event-meta { gap:4px; font-size:8px; }
+  .figma-event-meta svg { width:11px; height:11px; }
+  .figma-hero-visual {
+    position:absolute;
+    z-index:1;
+    right:0;
+    bottom:0;
+    width:68%;
+    min-height:330px;
+    margin:0;
+    border-radius:18px 0 0 18px;
+  }
+  .figma-character-placeholder { width:58%; left:6%; }
+  .figma-building-placeholder { width:62%; }
+  .figma-about { min-height:280px; grid-template-columns:1.12fr .88fr; clip-path:polygon(0 8%,100% 0,100% 92%,0 100%); }
+  .figma-about-copy { padding:42px 18px 20px; }
+  .figma-about h2 { font-size:25px; }
+  .figma-about-copy>p:not(.figma-section-label) { font-size:9px; line-height:1.7; margin:10px 0 14px; }
+  .figma-about .figma-section-label { font-size:8px; }
+  .figma-about .figma-button { min-height:32px; font-size:9px; padding:0 12px; }
+  .figma-about-visual { min-height:280px; }
+  .figma-exhibition { grid-template-columns:92px 1fr; gap:12px; padding:28px 16px; margin-bottom:16px; }
+  .figma-exhibition h2 { font-size:23px; }
+  .figma-exhibition-copy>p:not(.figma-section-label) { font-size:8px; line-height:1.65; margin:8px 0 12px; }
+  .figma-exhibition .figma-section-label { font-size:8px; }
+  .figma-exhibition .figma-button { min-height:30px; font-size:8px; padding:0 10px; }
+  .figma-course-grid { grid-template-columns:repeat(2,1fr); gap:7px; }
+  .figma-course-card { height:128px; border-radius:10px; padding:7px; }
+  .figma-course-visual { inset:0 0 38px; font-size:14px; }
+  .figma-course-card strong { font-size:7px; }
+  .figma-course-card svg { width:12px; height:12px; right:7px; bottom:8px; }
+  .figma-information { grid-template-columns:1fr 1fr 1fr; min-height:150px; margin-bottom:0; }
+  .figma-info-card,.figma-access-card,.figma-sns-card { padding:12px 8px; }
+  .figma-info-card svg,.figma-access-card svg,.figma-sns-card svg { width:22px; height:22px; }
+  .figma-information h2 { font-size:14px; margin-bottom:8px; }
+  .figma-information .figma-section-label { font-size:7px; }
+  .figma-news-row { grid-template-columns:52px 1fr 10px; gap:3px; font-size:6px; padding:4px 0; }
+  .figma-news-row time { font-size:6px; }
+  .figma-news-row svg { width:8px; height:8px; }
+  .figma-access-card>p { font-size:7px; margin:6px 0 8px; }
+  .figma-access-card .figma-button { min-height:28px; font-size:7px; padding:0 7px; }
+  .figma-social-link { width:28px; height:28px; font-size:8px; }
+  .figma-social-link svg { width:14px; height:14px; }
+  .figma-camp-footer { min-height:115px; grid-template-columns:1fr auto; padding:16px 12px 12px; }
+  .figma-camp-footer-brand { gap:7px; }
+  .figma-camp-footer-brand .figma-logo-mark { font-size:23px; }
+  .figma-camp-footer-brand div { font-size:7px; }
+  .figma-camp-footer-brand div span { font-size:5px; }
+  .figma-camp-footer>p { font-size:8px; }
+  .figma-camp-footer>small { font-size:6px; padding-top:8px; }
+}

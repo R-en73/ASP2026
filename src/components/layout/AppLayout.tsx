@@ -248,13 +248,19 @@ export const AppLayout: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow pt-14 sm:pt-20 pb-24 lg:pb-0">
+      <main className={clsx(
+        "flex-grow",
+        location.pathname === '/' ? "pt-0 pb-0" : "pt-14 sm:pt-20 pb-24 lg:pb-0"
+      )}>
         <Outlet />
       </main>
 
       {/* Mobile Bottom Navigation Bar (Transparent Acrylic Glass Texture) */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-40 acrylic-bottom-bar lg:hidden flex justify-around items-center h-16 pb-safe px-1.5 select-none"
+        className={clsx(
+          "fixed bottom-0 left-0 right-0 z-40 acrylic-bottom-bar lg:hidden justify-around items-center h-16 pb-safe px-1.5 select-none",
+          location.pathname === '/' ? "hidden" : "flex"
+        )}
         aria-label="モバイルナビゲーション"
       >
         {/* Specular sheen line on the top cut edge of acrylic glass */}
@@ -298,7 +304,7 @@ export const AppLayout: React.FC = () => {
       </nav>
 
       {/* Floating Scroll to Top Button for mobile thumbs */}
-      {showScrollTop && (
+      {showScrollTop && location.pathname !== '/' && (
         <button
           onClick={scrollToTop}
           aria-label="ページ最上部へ戻る"
@@ -311,9 +317,7 @@ export const AppLayout: React.FC = () => {
       {/* Footer */}
       <footer className={clsx(
         "w-full py-8 px-4 sm:px-6 lg:px-8 border-t transition-colors",
-        location.pathname === '/'
-          ? "bg-[#fed814] border-black/10 text-zinc-900"
-          : "bg-[#e8f4fc]/60 border-slate-200/80 text-slate-600"
+        location.pathname === '/' ? "hidden" : "bg-[#e8f4fc]/60 border-slate-200/80 text-slate-600"
       )}>
         <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
