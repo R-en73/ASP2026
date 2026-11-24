@@ -1261,7 +1261,12 @@ export default function Admin() {
                   onChange={e => setSettings({...settings, isVotingEnabled: e.target.checked})}
                   className="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500"
                 />
-                <label htmlFor="voting" className="text-sm font-bold text-slate-700">投票（いいね）機能を受付中にする</label>
+                <label htmlFor="voting" className="text-sm font-bold text-slate-700">
+                  投票（いいね）機能を受付中にする
+                  <span className={`ml-2 inline-block rounded-full px-2 py-1 text-xs ${settings.isVotingEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {settings.isVotingEnabled ? '受付中' : '停止中'}
+                  </span>
+                </label>
               </div>
 
               <div className="pt-6 border-t">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import clsx from 'clsx';
-import { getBoothById, addVote, getBoothVotes, getUserVoteCount, addComment, getCommentsByBooth } from '../lib/db';
+import { getBoothById, addVote, getBoothVotes, getUserVoteCount, addComment, getCommentsByBooth, getSystemSettings } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { BoothDetail, BoothComment } from '../types';
 import { Heart, MessageSquare, ArrowLeft, ExternalLink, Video, FileText, Sparkles, Check } from 'lucide-react';
@@ -164,6 +164,7 @@ export default function BoothDetailView() {
   const [userVoteCount, setUserVoteCount] = useState(0);
   const [alreadyLiked, setAlreadyLiked] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isVotingEnabled, setIsVotingEnabled] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -173,6 +174,13 @@ export default function BoothDetailView() {
   }, [id, user]);
 
   const loadData = async (rawId: string) => {
+    try {
+      const settings = await getSystemSettings();
+      setIsVotingEnabled(settings.isVotingEnabled);
+    } catch {
+      setIsVotingEnabled(true);
+    }
+
     const decodedId = decodeURIComponent(rawId);
     let b = await getBoothById(decodedId);
     if (!b && rawId !== decodedId) {
@@ -207,6 +215,10 @@ export default function BoothDetailView() {
 
   const handleVote = async () => {
     if (!user || !booth) return;
+    if (!isVotingEnabled) {
+      toast.error('現在は投票受付を停止しています');
+      return;
+    }
     if (user.authority === 'event') {
       toast.error('イベント係は投票できません');
       return;
@@ -453,22 +465,31 @@ export default function BoothDetailView() {
              onClick={handleVote}
              disabled={
                isSubmitting || 
+               !isVotingEnabled ||
                (user?.authority === 'guest' && (userVoteCount >= MAX_VISITOR_LIKES || alreadyLiked)) ||
                (user?.authority === 'student' && userVoteCount >= 5)
              }
              className={clsx(
                "mx-auto flex flex-col items-center justify-center w-28 h-28 sm:w-32 sm:h-32 rounded-full text-white shadow-xl transition-all cursor-pointer",
+               !isVotingEnabled && "bg-slate-400 shadow-slate-300 cursor-not-allowed grayscale",
                alreadyLiked
                  ? "bg-gradient-to-br from-pink-500 to-rose-600 shadow-pink-500/40 ring-4 ring-pink-200"
                  : "bg-gradient-to-br from-pink-400 to-pink-500 shadow-pink-500/30 active:scale-95 hover:scale-105",
+               !isVotingEnabled && "hover:scale-100",
                (user?.authority === 'guest' && userVoteCount >= MAX_VISITOR_LIKES && !alreadyLiked) && "opacity-50 cursor-not-allowed hover:scale-100",
                isSubmitting && "opacity-50 cursor-wait"
              )}
-             title={alreadyLiked ? 'いいね済み' : 'いいねする'}
+             title={!isVotingEnabled ? '投票受付停止中' : alreadyLiked ? 'いいね済み' : 'いいねする'}
            >
              <Heart className={clsx("w-8 h-8 sm:w-10 sm:h-10 mb-1.5 fill-current transition-transform", alreadyLiked && "scale-110")} />
              <span className="text-xl sm:text-2xl font-black">{likes}</span>
            </button>
+
+           {!isVotingEnabled && (
+             <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700">
+               投票受付は現在停止しています
+             </div>
+           )}
            
            {/* 来場者向けいいね制限表示（端末Cookie連携） */}
            {user?.authority === 'guest' && (

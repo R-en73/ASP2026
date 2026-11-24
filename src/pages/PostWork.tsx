@@ -212,9 +212,12 @@ export default function PostWork() {
         setIsUploadingImage(false);
       }
     } else if (field === 'pdfUrl' && index !== undefined) {
-      const pdfFiles = Array.from(files as Iterable<File> | ArrayLike<File>).filter((f: File) => f.type === 'application/pdf');
+      const pdfFiles = Array.from(files as Iterable<File> | ArrayLike<File>).filter((f: File) =>
+        f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+      );
       if (pdfFiles.length === 0) {
          toast.error('PDFファイルを選択してください');
+         e.target.value = '';
          return;
       }
       
@@ -266,6 +269,7 @@ export default function PostWork() {
         }
       } finally {
         setUploadingPdfIndex(null);
+        e.target.value = '';
       }
     }
   };
@@ -846,7 +850,7 @@ export default function PostWork() {
                             <div className="w-full bg-white border-2 border-dashed border-slate-200 rounded-xl px-5 py-6 text-center hover:border-cyan-500 transition-colors relative cursor-pointer group mb-3 mt-2">
                               <input 
                                 type="file" 
-                                accept="application/pdf"
+                                accept="application/pdf,.pdf"
                                 multiple
                                 onChange={(e) => handleFileUpload(e, 'pdfUrl', index)}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"

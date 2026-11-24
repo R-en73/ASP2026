@@ -116,6 +116,15 @@ async function storePdfInFirestore(file: File, uid: string): Promise<UploadResul
  * 2. Storage 未設定時は Firestore に保存（小PDFは書き込み1回、大PDFはチャンク分割）
  */
 export async function uploadPdf(file: File, uid: string): Promise<UploadResult> {
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isPdf) {
+    throw new Error('PDFファイルのみアップロードできます');
+  }
+
+  if (file.size === 0) {
+    throw new Error('PDFファイルが空です');
+  }
+
   const storageUrl = await tryUploadToStorage(file, 'pdfs', uid);
   if (storageUrl) {
     return { url: storageUrl, name: file.name };

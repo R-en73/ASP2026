@@ -251,9 +251,17 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
     const docRef = doc(db, 'settings', 'system');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data() as SystemSettings;
+      const data = docSnap.data() as Partial<SystemSettings>;
+      return {
+        mainTitle: data.mainTitle || '学園祭 / 文化祭 特設ポータル',
+        mainVisualUrl: data.mainVisualUrl || '',
+        comment: data.comment || 'ご来場ありがとうございます！',
+        isVotingEnabled: data.isVotingEnabled !== false
+      };
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('getSystemSettings error:', e);
+  }
   return {
     mainTitle: '学園祭 / 文化祭 特設ポータル',
     mainVisualUrl: '',
@@ -263,11 +271,9 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
 };
 
 export const saveSystemSettings = async (settings: SystemSettings) => {
-  try {
-    const db = await getDb();
-    const docRef = doc(db, 'settings', 'system');
-    await setDoc(docRef, settings, { merge: true });
-  } catch (e) {}
+  const db = await getDb();
+  const docRef = doc(db, 'settings', 'system');
+  await setDoc(docRef, settings, { merge: true });
 };
 
 // Booth Details
@@ -450,6 +456,11 @@ export const getAllVotes = getVotes;
 export const addVote = async (boothIdOrVote: any, userId?: string) => {
   try {
     const db = await getDb();
+    const settingsSnap = await getDoc(doc(db, 'settings', 'system'));
+    if (settingsSnap.exists() && settingsSnap.data().isVotingEnabled === false) {
+      throw new Error('投票受付は現在停止しています');
+    }
+
     let boothId = '';
     let uid = '';
     if (typeof boothIdOrVote === 'object') {
@@ -484,6 +495,7 @@ export const addVote = async (boothIdOrVote: any, userId?: string) => {
     });
   } catch (e) {
     console.error('addVote error:', e);
+    throw e;
   }
 };
 
