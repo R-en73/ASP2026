@@ -12,7 +12,7 @@ export default function ExhibitionPopup() {
   useEffect(() => {
     if (sessionStorage.getItem(POPUP_SESSION_KEY) === 'true') return;
 
-    const timer = window.setTimeout(() => setOpen(true), 450);
+    const timer = window.setTimeout(() => setOpen(true), 650);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -21,15 +21,15 @@ export default function ExhibitionPopup() {
 
     const context = gsap.context(() => {
       gsap.timeline({ defaults: { ease: 'power3.out' } })
-        .from('.aso-popup-overlay', { opacity: 0, duration: 0.5, ease: 'power2.out' })
+        .from('.aso-popup-overlay', { opacity: 0, duration: 0.65, ease: 'power1.out' })
         .from('.aso-popup-card', {
-          y: 18,
-          scale: 0.975,
+          y: 14,
+          scale: 0.98,
           opacity: 0,
-          filter: 'blur(4px)',
-          duration: 0.72,
-          ease: 'power2.out',
-        }, '-=0.32');
+          filter: 'blur(6px)',
+          duration: 0.9,
+          ease: 'power1.out',
+        }, '-=0.42');
     });
 
     return () => context.revert();
