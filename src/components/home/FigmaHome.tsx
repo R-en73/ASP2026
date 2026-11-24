@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getBooths, getNews } from '../../lib/db';
 import type { BoothDetail, NewsItem } from '../../types';
+import ExhibitionPopup from './ExhibitionPopup';
 const Hero3D = lazy(() => import('./Hero3D'));
 
 gsap.registerPlugin(ScrollTrigger);
@@ -108,6 +109,7 @@ export default function FigmaHome() {
 
   return (
     <div className="figma-home min-h-screen overflow-hidden bg-[#edf9ff] text-[#10245a]">
+      <ExhibitionPopup />
       <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
         <header className="figma-header">
           <Link to="/" className="figma-logo" aria-label="ASO高等部 卒業進級制作展 ホーム">
