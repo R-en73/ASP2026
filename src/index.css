@@ -7,6 +7,16 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+::selection {
+  background: #bdeaff;
+  color: #111827;
+}
+
+::-moz-selection {
+  background: #bdeaff;
+  color: #111827;
+}
+
 /* Mobile Touch & Scrollbar Utilities */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

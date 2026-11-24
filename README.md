@@ -21,3 +21,27 @@ Storage 未設定時は Firestore へ分割保存）。OGP 取得用の `/api/og
    `npm install`
 3. アプリを起動します。
    `npm run dev`
+
+## 技術スタック
+
+### 現在の構成
+
+- React 18 / TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Firebase：Firestore、Authentication、Storage
+- GitHub Pages
+- GitHub Actions
+- Express + Vite（ローカル開発サーバー）
+
+### 導入候補
+
+| デザインの方向性 | 推奨技術・ライブラリ | 特徴・得意な表現 |
+| --- | --- | --- |
+| モーション表現 | Motion（旧Framer Motion） / GSAP | React向けの宣言的アニメーション、スクロール連動、高度なタイムライン表現 |
+| 3D・空間表現・没入感 | Three.js / React Three Fiber（R3F） / Spline | ブラウザ上での3Dモデル操作、GLSLシェーダー、ノーコード寄りの3D組み込み |
+| 滑らかなスクロール体験 | Lenis | 慣性スクロールを実装し、GSAPと組み合わせてサイト全体の質感を向上 |
+| シームレスな画面遷移 | Barba.js / View Transitions API | リロードを感じさせない連続的な画面遷移 |
+| 洗練されたUIコンポーネント | Radix UI / shadcn/ui | アクセシビリティを保ちつつ自由度の高いヘッドレスUI |
+| コンテンツ重視の静的サイト | Astro | コンテンツページの軽量化に優れるが、既存React SPAとの全面置換が必要 |
