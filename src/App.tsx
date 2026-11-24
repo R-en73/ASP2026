@@ -9,9 +9,8 @@ import {
   Gamepad2, Palette, Code2, Film, ChevronRight, CheckCircle2,
   ExternalLink, Star, Loader2
 } from 'lucide-react';
-import FigmaHome from './components/home/FigmaHome';
-
 // ページはコード分割し、アクセス時に遅延読み込み（初期表示のJS量を削減）
+const FigmaHome = lazy(() => import('./components/home/FigmaHome'));
 const Login = lazy(() => import('./pages/Login'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const Booths = lazy(() => import('./pages/Booths'));

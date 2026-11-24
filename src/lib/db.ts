@@ -3,6 +3,11 @@ import { getDb } from './firebase';
 import { User, BoothDetail, Room, Course, SystemSettings, BoothComment, Vote, NewsItem } from '../types';
 import { deletePdfChunks } from './pdfChunks';
 
+const CACHE_TTL_MS = 30_000;
+let boothCache: { value: BoothDetail[]; expiresAt: number } | null = null;
+let newsCache: { value: NewsItem[]; expiresAt: number } | null = null;
+let settingsCache: { value: SystemSettings; expiresAt: number } | null = null;
+
 // Clear any old zombie user caches from previous versions
 try {
   localStorage.removeItem('aso_users_cache_v4');
@@ -246,18 +251,21 @@ export const getAllUsers = async (): Promise<User[]> => {
 
 // System Settings
 export const getSystemSettings = async (): Promise<SystemSettings> => {
+  if (settingsCache && settingsCache.expiresAt > Date.now()) return settingsCache.value;
   try {
     const db = await getDb();
     const docRef = doc(db, 'settings', 'system');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data() as Partial<SystemSettings>;
-      return {
+      const value = {
         mainTitle: data.mainTitle || '学園祭 / 文化祭 特設ポータル',
         mainVisualUrl: data.mainVisualUrl || '',
         comment: data.comment || 'ご来場ありがとうございます！',
         isVotingEnabled: data.isVotingEnabled !== false
       };
+      settingsCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
+      return value;
     }
   } catch (e) {
     console.error('getSystemSettings error:', e);
@@ -274,14 +282,18 @@ export const saveSystemSettings = async (settings: SystemSettings) => {
   const db = await getDb();
   const docRef = doc(db, 'settings', 'system');
   await setDoc(docRef, settings, { merge: true });
+  settingsCache = null;
 };
 
 // Booth Details
 export const getBoothDetails = async (): Promise<BoothDetail[]> => {
+  if (boothCache && boothCache.expiresAt > Date.now()) return boothCache.value;
   try {
     const db = await getDb();
     const snap = await getDocs(collection(db, 'boothDetails'));
-    return snap.docs.map(d => ({ ...d.data(), id: d.id } as BoothDetail));
+    const value = snap.docs.map(d => ({ ...d.data(), id: d.id } as BoothDetail));
+    boothCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
+    return value;
   } catch (e) {
     return [];
   }
@@ -304,7 +316,11 @@ export const saveBoothDetail = async (idOrDetail: string | BoothDetail, detailDa
     if (!boothId) return;
     const docRef = doc(db, 'boothDetails', boothId);
     await setDoc(docRef, payload, { merge: true });
-  } catch (e) {}
+    boothCache = null;
+  } catch (e) {
+    console.error('saveBoothDetail error:', e);
+    throw e;
+  }
 };
 
 export const saveBooth = saveBoothDetail;
@@ -412,6 +428,7 @@ export const deleteBooth = async (id: string) => {
       console.error('deleteBooth pdf cleanup error:', e);
     }
     await deleteDoc(doc(db, 'boothDetails', id));
+    boothCache = null;
   } catch (e) {
     console.error('deleteBooth error:', e);
     throw e;
@@ -456,8 +473,8 @@ export const getAllVotes = getVotes;
 export const addVote = async (boothIdOrVote: any, userId?: string) => {
   try {
     const db = await getDb();
-    const settingsSnap = await getDoc(doc(db, 'settings', 'system'));
-    if (settingsSnap.exists() && settingsSnap.data().isVotingEnabled === false) {
+    const settings = await getSystemSettings();
+    if (!settings.isVotingEnabled) {
       throw new Error('投票受付は現在停止しています');
     }
 
@@ -723,13 +740,16 @@ export const seedDefaultNewsItems = async (force: boolean = false): Promise<News
 };
 
 export const getNews = async (): Promise<NewsItem[]> => {
+  if (newsCache && newsCache.expiresAt > Date.now()) return newsCache.value;
   try {
     const db = await getDb();
     const snap = await getDocs(collection(db, 'news'));
     if (!snap.empty) {
       const items = snap.docs.map(d => ({ ...d.data(), id: d.id } as NewsItem));
       // Sort by date descending
-      return items.sort((a, b) => b.date.localeCompare(a.date));
+      const value = items.sort((a, b) => b.date.localeCompare(a.date));
+      newsCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
+      return value;
     }
     // Auto-seed default news items so Firestore collection has actual documents to edit/delete
     try {
@@ -786,6 +806,7 @@ export const saveNewsItem = async (item: Partial<NewsItem>): Promise<string> => 
   };
 
   await setDoc(docRef, payload, { merge: true });
+  newsCache = null;
   return id;
 };
 
@@ -793,4 +814,5 @@ export const deleteNewsItem = async (id: string): Promise<void> => {
   if (!id) return;
   const db = await getDb();
   await deleteDoc(doc(db, 'news', id));
+  newsCache = null;
 };

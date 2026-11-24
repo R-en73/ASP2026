@@ -24,6 +24,8 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router-dom', 'react-hot-toast', 'clsx'],
           'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
           'icons': ['lucide-react'],
+          'motion-vendor': ['gsap', 'lenis', 'motion/react'],
+          'three-vendor': ['three', '@react-three/fiber'],
         },
       },
     },

@@ -6,6 +6,7 @@ export interface OgpData {
 }
 
 const cache = new Map<string, OgpData>();
+const inFlight = new Map<string, Promise<OgpData>>();
 
 function isSafeUrl(value: string): boolean {
   try {
@@ -27,56 +28,67 @@ async function fetchWithTimeout(input: string, timeoutMs = 8000): Promise<Respon
 }
 
 export async function fetchOgp(rawUrl: string): Promise<OgpData> {
-  if (!isSafeUrl(rawUrl)) {
-    return { url: rawUrl, title: rawUrl };
-  }
+  if (!isSafeUrl(rawUrl)) return { url: rawUrl, title: rawUrl };
   if (cache.has(rawUrl)) return cache.get(rawUrl)!;
+  if (inFlight.has(rawUrl)) return inFlight.get(rawUrl)!;
 
-  const fallback: OgpData = {
-    url: rawUrl,
-    title: (() => {
-      try {
-        return new URL(rawUrl).hostname;
-      } catch {
-        return rawUrl;
-      }
-    })(),
-  };
-
+  let fallbackTitle = rawUrl;
   try {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isLocalhost) {
-      const localResponse = await fetchWithTimeout(`${window.location.origin}/api/ogp?url=${encodeURIComponent(rawUrl)}`, 5000);
-      if (localResponse.ok) {
-        const localData = await localResponse.json();
-        const result = {
-          url: rawUrl,
-          title: localData.title || fallback.title,
-          description: localData.description,
-          image: localData.image,
-        };
-        cache.set(rawUrl, result);
-        return result;
+    fallbackTitle = new URL(rawUrl).hostname;
+  } catch {}
+  const fallback: OgpData = { url: rawUrl, title: fallbackTitle };
+
+  const request = (async () => {
+    try {
+      const isLocalhost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      if (isLocalhost) {
+        const localResponse = await fetchWithTimeout(
+          `${window.location.origin}/api/ogp?url=${encodeURIComponent(rawUrl)}`,
+          5000
+        );
+        if (localResponse.ok) {
+          const localData = await localResponse.json();
+          const result: OgpData = {
+            url: rawUrl,
+            title: localData.title || fallback.title,
+            description: localData.description,
+            image: localData.image,
+          };
+          cache.set(rawUrl, result);
+          return result;
+        }
       }
+
+      const response = await fetchWithTimeout(
+        `https://api.microlink.io/?url=${encodeURIComponent(rawUrl)}&meta=true&screenshot=false`,
+        8000
+      );
+      if (!response.ok) {
+        cache.set(rawUrl, fallback);
+        return fallback;
+      }
+
+      const data = await response.json();
+      const meta = data?.data;
+      const result: OgpData = {
+        url: rawUrl,
+        title: meta?.title || fallback.title,
+        description: meta?.description,
+        image: meta?.image?.url || meta?.logo?.url,
+      };
+      cache.set(rawUrl, result);
+      return result;
+    } catch {
+      cache.set(rawUrl, fallback);
+      return fallback;
+    } finally {
+      inFlight.delete(rawUrl);
     }
+  })();
 
-    const response = await fetchWithTimeout(
-      `https://api.microlink.io/?url=${encodeURIComponent(rawUrl)}&meta=true&screenshot=false`,
-      8000
-    );
-    if (!response.ok) return fallback;
-
-    const data = await response.json();
-    const meta = data?.data;
-    const result: OgpData = {
-      url: rawUrl,
-      title: meta?.title || fallback.title,
-      description: meta?.description,
-      image: meta?.image?.url || meta?.logo?.url,
-    };
-    cache.set(rawUrl, result);
-    return result;
-  } catch (error) {
-    return fallback;
-  }
+  inFlight.set(rawUrl, request);
+  return request;
 }
