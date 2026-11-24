@@ -87,6 +87,25 @@ export default function FigmaHome() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const context = gsap.context(() => {
+      gsap.timeline({ defaults: { ease: 'power3.out' } })
+        .from('.figma-menu-panel', { x: '100%', duration: 0.48 })
+        .from('.figma-menu-panel .figma-menu-head', { y: -18, opacity: 0, duration: 0.38 }, '-=0.22')
+        .from('.figma-menu-row', {
+          x: 38,
+          opacity: 0,
+          duration: 0.42,
+          stagger: 0.055,
+        }, '-=0.16')
+        .from('.figma-menu-footer', { y: 18, opacity: 0, duration: 0.36 }, '-=0.14');
+    });
+
+    return () => context.revert();
+  }, [menuOpen]);
+
   return (
     <div className="figma-home min-h-screen overflow-hidden bg-[#edf9ff] text-[#10245a]">
       <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
@@ -113,33 +132,53 @@ export default function FigmaHome() {
         </header>
 
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-[70] bg-[#08245d]/55 backdrop-blur-sm" />
-          <Dialog.Content className="fixed right-3 top-3 z-[71] w-[calc(100%-1.5rem)] max-w-sm rounded-[24px] bg-white p-5 shadow-2xl outline-none">
-            <div className="mb-5 flex items-center justify-between">
-              <Dialog.Title className="text-lg font-black text-[#10245a]">MENU</Dialog.Title>
+          <Dialog.Overlay className="figma-menu-overlay" />
+          <Dialog.Content className="figma-menu-panel">
+            <div className="figma-menu-speed-lines" aria-hidden="true" />
+            <div className="figma-menu-head">
+              <div className="figma-menu-brand" aria-label="ASO高等部 卒業進級制作展2026">
+                <span className="figma-logo-mark">ASO</span>
+                <span>卒業進級制作展2026</span>
+              </div>
+              <Dialog.Title className="sr-only">メインメニュー</Dialog.Title>
+              <Dialog.Description className="sr-only">サイト内の主要ページへ移動できます。</Dialog.Description>
               <Dialog.Close asChild>
-                <button type="button" aria-label="メニューを閉じる" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100">
+                <button type="button" aria-label="メニューを閉じる" className="figma-menu-close">
                   <X className="h-5 w-5" />
+                  <span>CLOSE</span>
                 </button>
               </Dialog.Close>
             </div>
-            <Dialog.Description className="sr-only">サイト内の主要ページへ移動できます。</Dialog.Description>
-            <nav className="grid gap-2">
+            <nav className="figma-menu-nav" aria-label="メニュー">
               {[
-                ['ABOUT', '/#about'],
-                ['EXHIBITION', '/#exhibition'],
-                ['INFORMATION', '/#information'],
-                ['ACCESS', '/access'],
-                ['SNS', '/#sns'],
-              ].map(([label, href]) => (
-                <Link key={label} to={href} onClick={() => setMenuOpen(false)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-black text-[#10245a]">
-                  {label}
+                ['ABOUT', 'この展示会について', '/#about'],
+                ['EXHIBITION', '展示作品', '/#exhibition'],
+                ['INFORMATION', 'お知らせ', '/#information'],
+                ['ACCESS', 'アクセス', '/access'],
+                ['SNS', '最新情報', '/#sns'],
+              ].map(([label, ja, href]) => (
+                <Link
+                  key={label}
+                  to={href}
+                  onClick={() => setMenuOpen(false)}
+                  className="figma-menu-row"
+                >
+                  <span className="figma-menu-row-index" aria-hidden="true">
+                    {String(['ABOUT', 'EXHIBITION', 'INFORMATION', 'ACCESS', 'SNS'].indexOf(label) + 1).padStart(2, '0')}
+                  </span>
+                  <span className="figma-menu-row-label">{label}</span>
+                  <span className="figma-menu-row-ja">{ja}</span>
+                  <ArrowRight className="h-5 w-5" />
                 </Link>
               ))}
-              <Link to="/booths" onClick={() => setMenuOpen(false)} className="mt-2 rounded-xl bg-[#1b4be8] px-4 py-3 text-center text-sm font-black text-white">
-                作品を見る
-              </Link>
             </nav>
+            <div className="figma-menu-footer">
+              <Link to="/booths" onClick={() => setMenuOpen(false)} className="figma-menu-works">
+                作品を見る
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <p>つくることで、つながる未来へ。</p>
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
