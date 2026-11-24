@@ -532,6 +532,7 @@ body {
   outline:0;
   background:#eef8ff;
   box-shadow:0 28px 90px rgba(6,28,70,.42);
+  will-change:transform,opacity,filter;
 }
 
 .aso-popup-image {

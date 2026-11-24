@@ -21,13 +21,15 @@ export default function ExhibitionPopup() {
 
     const context = gsap.context(() => {
       gsap.timeline({ defaults: { ease: 'power3.out' } })
-        .from('.aso-popup-overlay', { opacity: 0, duration: 0.28 })
+        .from('.aso-popup-overlay', { opacity: 0, duration: 0.5, ease: 'power2.out' })
         .from('.aso-popup-card', {
-          y: 28,
-          scale: 0.94,
+          y: 18,
+          scale: 0.975,
           opacity: 0,
-          duration: 0.48,
-        }, '-=0.16');
+          filter: 'blur(4px)',
+          duration: 0.72,
+          ease: 'power2.out',
+        }, '-=0.32');
     });
 
     return () => context.revert();
