@@ -7,6 +7,7 @@ import { BoothDetail, BoothComment } from '../types';
 import { Heart, MessageSquare, ArrowLeft, ExternalLink, Video, FileText, Sparkles, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PdfLink from '../components/PdfLink';
+import OgpLinkCard from '../components/OgpLinkCard';
 import { 
   hasVisitorLikedBooth, 
   getVisitorLikesCount, 
@@ -14,61 +15,6 @@ import {
   MAX_VISITOR_LIKES 
 } from '../lib/cookie';
 
-
-const OgpLink: React.FC<{ url: string }> = ({ url }) => {
-  const [ogp, setOgp] = useState<{title?: string, image?: string, description?: string} | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/ogp?url=' + encodeURIComponent(url))
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) setOgp(data);
-      })
-      .finally(() => setLoading(false));
-  }, [url]);
-
-  return (
-    <a href={url} target="_blank" rel="noreferrer" className="flex flex-col h-full group border border-slate-200 rounded-2xl p-4 hover:border-cyan-500 hover:shadow-md transition-all bg-white">
-      {loading ? (
-        <div className="flex flex-col h-full animate-pulse">
-          <div className="h-4 bg-slate-100 rounded w-3/4 mb-3"></div>
-          <div className="w-full aspect-video bg-slate-100 rounded-xl mb-3"></div>
-          <div className="h-3 bg-slate-100 rounded w-full mb-1"></div>
-          <div className="h-3 bg-slate-100 rounded w-1/2"></div>
-        </div>
-      ) : (
-        <>
-          <h4 className="font-bold text-slate-800 text-[15px] line-clamp-2 mb-3 group-hover:text-cyan-600 transition-colors leading-snug">
-            {ogp?.title || url}
-          </h4>
-          
-          {ogp?.image ? (
-            <div className="w-full aspect-video bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center p-2 mb-3 overflow-hidden">
-              <img src={ogp.image} alt={ogp.title || 'Link thumbnail'} className="w-full h-full object-contain rounded-lg drop-shadow-sm" />
-            </div>
-          ) : (
-            <div className="w-full aspect-video bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-cyan-400 transition-colors mb-3">
-              <ExternalLink className="w-8 h-8" />
-            </div>
-          )}
-
-          <div className="mt-auto flex flex-col gap-1.5">
-            {ogp?.description && (
-              <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                {ogp.description}
-              </p>
-            )}
-            <span className="text-[10px] text-slate-400 truncate flex items-center gap-1.5">
-              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-              {url}
-            </span>
-          </div>
-        </>
-      )}
-    </a>
-  );
-};
 
 interface BoothMediaDisplayProps {
   booth: BoothDetail;
@@ -400,7 +346,7 @@ export default function BoothDetailView() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {booth.externalLinks.map((link, i) => (
-                  <OgpLink key={i} url={link} />
+                  <OgpLinkCard key={i} url={link} />
                 ))}
               </div>
             </div>

@@ -6,6 +6,7 @@ import { NewsItem, NewsCategory } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import OgpLinkCard from '../components/OgpLinkCard';
 
 const CATEGORIES: { key: 'ALL' | NewsCategory; label: string; badgeClass: string }[] = [
   { key: 'ALL', label: 'すべて', badgeClass: 'bg-zinc-800 text-white' },
@@ -187,15 +188,7 @@ export default function News() {
               {/* External URL Link (if provided) */}
               {activeArticle.externalUrl && (
                 <div className="mt-8 pt-6 border-t border-slate-100">
-                  <a
-                    href={activeArticle.externalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition-colors"
-                  >
-                    <span>関連リンクを開く</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
+                  <OgpLinkCard url={activeArticle.externalUrl} compact />
                 </div>
               )}
 
