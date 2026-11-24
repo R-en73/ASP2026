@@ -42,6 +42,7 @@ export const AppLayout: React.FC = () => {
     <div className={clsx("min-h-screen font-sans flex flex-col", location.pathname === '/' ? "bg-[#ffea34] text-zinc-950" : "bg-[#f0f7fd] text-slate-900")}>
       {/* Header */}
       <header className={clsx(
+        location.pathname === '/' && "hidden",
         "fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b transition-colors",
         location.pathname === '/' 
           ? "bg-[#ffea34] border-black/10 shadow-[0_2px_15px_rgba(0,0,0,0.04)]" 
