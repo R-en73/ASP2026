@@ -1,8 +1,29 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /pdfs/{pdfId} {
+      allow read: if true;
+      allow write: if request.resource == null ||
+        (request.resource.data.contentType == 'application/pdf' &&
+          request.resource.data.userId is string &&
+          ((request.resource.data.single == true &&
+              request.resource.data.data is string &&
+              request.resource.data.data.size() <= 850 * 1024) ||
+            (request.resource.data.totalChunks is int &&
+              request.resource.data.totalChunks > 0 &&
+              request.resource.data.totalChunks <= 20)));
+
+      match /chunks/{chunkId} {
+        allow read: if true;
+        allow write: if request.resource == null ||
+          (chunkId.matches('^(0|[1-9]|1[0-9])$') &&
+            request.resource.data.data is string &&
+            request.resource.data.data.size() <= 700 * 1024);
+      }
+    }
+
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if document.split('/')[0] != 'pdfs';
     }
   }
 }

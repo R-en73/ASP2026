@@ -2,11 +2,10 @@
  * ブラウザから Firebase Storage へ直接ファイルをアップロードするユーティリティ。
  * サーバー（/api/upload）に依存しないため、GitHub Pages などの静的ホスティングでも動作します。
  *
- * - Firebase Storage が利用できるかどうかを初回失敗時に判定してキャッシュし、
- *   以降のアップロードでは無駄な待ち時間なしで Firestore 分割保存へ切り替えます。
- * - Storage 試行にはタイムアウトを設け、未設定環境でも即座にフォールバックします。
+ * - Storageへのアップロードは再開可能で、タイムアウトはファイルサイズに応じて最大30分です。
+ * - Storage未設定時は10MB以下のPDFのみFirestoreへフォールバックします。
  */
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, type UploadTask } from 'firebase/storage';
 import { getAppStorage } from './firebase';
 import { storePdfChunks, PDF_STORE_PREFIX } from './pdfChunks';
 
@@ -17,6 +16,10 @@ export interface UploadResult {
 
 // Storage 試行のタイムアウト（ms）
 const STORAGE_TIMEOUT_MS = 5000;
+const MAX_STORAGE_UPLOAD_TIMEOUT_MS = 30 * 60 * 1000;
+const EXPECTED_UPLOAD_BYTES_PER_SECOND = 512 * 1024;
+const MAX_FIRESTORE_PDF_FALLBACK_BYTES = 10 * 1024 * 1024;
+export const MAX_PDF_SIZE_BYTES = 300 * 1024 * 1024;
 
 // セッション内で Storage が利用可能かどうかのキャッシュ（null = 未判定）
 let storageUsable: boolean | null = null;
@@ -24,9 +27,12 @@ let storageUsable: boolean | null = null;
 /**
  * Promise にタイムアウトを付与する
  */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout?: () => void): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Storage request timed out')), ms);
+    const timer = setTimeout(() => {
+      onTimeout?.();
+      reject(new Error('Storage request timed out'));
+    }, ms);
     promise.then(
       (value) => {
         clearTimeout(timer);
@@ -59,13 +65,22 @@ const sanitizeFileName = (name: string): string => {
  * @param folder Storage 上のフォルダ名（例: 'pdfs', 'thumbnails'）
  * @param uid ユーザーID（パスに含める）
  */
-export async function uploadFileToStorage(file: File, folder: string, uid: string): Promise<UploadResult> {
+export async function uploadFileToStorage(
+  file: File,
+  folder: string,
+  uid: string,
+  onTaskCreated?: (task: UploadTask) => void
+): Promise<UploadResult> {
   const storage = await getAppStorage();
   const safeUid = (uid || 'guest').replace(/[\\/:*?"<>|#[\]]/g, '_').slice(0, 64);
   const fileName = sanitizeFileName(file.name);
   const storageRef = ref(storage, `${folder}/${safeUid}/${Date.now()}-${fileName}`);
-  await uploadBytes(storageRef, file, { contentType: file.type || 'application/octet-stream' });
-  const url = await getDownloadURL(storageRef);
+  const task = uploadBytesResumable(storageRef, file, {
+    contentType: folder === 'pdfs' ? 'application/pdf' : file.type || 'application/octet-stream',
+  });
+  onTaskCreated?.(task);
+  const snapshot = await task;
+  const url = await getDownloadURL(snapshot.ref);
   return { url, name: file.name };
 }
 
@@ -87,8 +102,19 @@ export function fileToDataUrl(file: File): Promise<string> {
  */
 export async function tryUploadToStorage(file: File, folder: string, uid: string): Promise<string | null> {
   if (storageUsable === false) return null;
+  let uploadTask: UploadTask | undefined;
+  const timeoutMs = Math.min(
+    MAX_STORAGE_UPLOAD_TIMEOUT_MS,
+    Math.max(STORAGE_TIMEOUT_MS, Math.ceil((file.size / EXPECTED_UPLOAD_BYTES_PER_SECOND) * 1000))
+  );
   try {
-    const res = await withTimeout(uploadFileToStorage(file, folder, uid), STORAGE_TIMEOUT_MS);
+    const res = await withTimeout(
+      uploadFileToStorage(file, folder, uid, (task) => {
+        uploadTask = task;
+      }),
+      timeoutMs,
+      () => uploadTask?.cancel()
+    );
     storageUsable = true;
     return res.url;
   } catch (err) {
@@ -124,10 +150,16 @@ export async function uploadPdf(file: File, uid: string): Promise<UploadResult> 
   if (file.size === 0) {
     throw new Error('PDFファイルが空です');
   }
+  if (file.size > MAX_PDF_SIZE_BYTES) {
+    throw new Error('PDFは1ファイルあたり最大300MBまでです');
+  }
 
   const storageUrl = await tryUploadToStorage(file, 'pdfs', uid);
   if (storageUrl) {
     return { url: storageUrl, name: file.name };
+  }
+  if (file.size > MAX_FIRESTORE_PDF_FALLBACK_BYTES) {
+    throw new Error('10MBを超えるPDFはFirebase Storageが利用できる環境でアップロードしてください');
   }
   try {
     return await storePdfInFirestore(file, uid);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   UploadCloud, CheckCircle2, ChevronRight, ChevronLeft, Link as LinkIcon, 
   FileText, Video, Image as ImageIcon, X, Trash2, ExternalLink, Sparkles, ShieldAlert, Loader2, AlertTriangle 
@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { saveBooth, getBoothById, getBoothByUserId, getUserOwnedBooth, deleteBooth, updateUser } from '../lib/db';
-import { uploadPdf, tryUploadToStorage } from '../lib/upload';
+import { uploadPdf, tryUploadToStorage, MAX_PDF_SIZE_BYTES } from '../lib/upload';
 import toast from 'react-hot-toast';
 
 export default function PostWork() {
@@ -18,6 +18,17 @@ export default function PostWork() {
   const [currentBoothId, setCurrentBoothId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const stepTopRef = useRef<HTMLDivElement>(null);
+
+  const goToStep = (nextStep: number) => {
+    setStep(nextStep);
+    requestAnimationFrame(() => {
+      stepTopRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      });
+    });
+  };
 
   const getInitialFormData = (currUser: any) => ({
     title: '',
@@ -346,7 +357,7 @@ export default function PostWork() {
       updateUserSession({ boothId: '' });
       setCurrentBoothId(null);
       setFormData(getInitialFormData(user));
-      setStep(1);
+      goToStep(1);
       setShowDeleteModal(false);
       toast.success('作品を削除しました');
     } catch (e) {
@@ -440,7 +451,7 @@ export default function PostWork() {
 
       setCurrentBoothId(targetBoothId);
       toast.success('作品を保存しました！');
-      setStep(4);
+      goToStep(4);
     } catch (e) {
       console.error('handleSave error:', e);
       toast.error('保存に失敗しました');
@@ -558,13 +569,16 @@ export default function PostWork() {
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Main Form Area */}
           <div className="flex-1">
-            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 md:p-12">
+            <div ref={stepTopRef} className="scroll-mt-24 bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-8 md:p-12">
               
               {/* Mobile Step Header */}
               <div className="md:hidden flex items-center justify-between mb-4 bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-100">
                 <span className="text-xs font-bold text-slate-500">ステップ {step} / 4</span>
                 <span className="text-xs font-black text-slate-900">{steps.find(s => s.num === step)?.label}</span>
               </div>
+              <p className="sr-only" aria-live="polite" aria-atomic="true">
+                ステップ {step} / 4: {steps.find(s => s.num === step)?.label}
+              </p>
 
               {/* Stepper */}
               <div className="flex items-center justify-between mb-8 sm:mb-12 relative px-1">
@@ -837,7 +851,9 @@ export default function PostWork() {
                           <button type="button" onClick={() => addArrayItem('pdfs')} className="text-sm font-bold text-cyan-600 hover:text-cyan-700 bg-cyan-50 px-3 py-1 rounded-full">+ 追加</button>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 font-medium -mt-1 mb-3">サイズ上限なし（大きなPDFはアップロードに時間がかかる場合があります）</p>
+                      <p className="text-xs text-slate-400 font-medium -mt-1 mb-3">
+                        1ファイルあたり最大{Math.floor(MAX_PDF_SIZE_BYTES / (1024 * 1024))}MB（10MBを超える場合はFirebase Storageが必要です）
+                      </p>
                       
                       <div className="space-y-4">
                         {formData.pdfs.map((pdf, index) => (
@@ -991,7 +1007,7 @@ export default function PostWork() {
                         </Link>
                       )}
                       <button 
-                        onClick={() => setStep(1)}
+                        onClick={() => goToStep(1)}
                         className="inline-flex items-center gap-2 bg-slate-900 text-white px-7 py-3 rounded-full text-sm font-bold hover:bg-slate-800 transition-colors shadow-xs"
                       >
                         続けて編集する <ChevronRight className="w-4 h-4" />
@@ -1005,7 +1021,7 @@ export default function PostWork() {
               {step < 4 && (
                 <div className="flex items-center justify-between gap-3 mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-slate-100">
                   <button 
-                    onClick={() => setStep(s => Math.max(1, s - 1))}
+                    onClick={() => goToStep(Math.max(1, step - 1))}
                     className={clsx(
                       "text-slate-600 font-bold text-xs sm:text-sm flex items-center gap-1.5 hover:text-slate-900 transition-colors py-2.5 px-3 rounded-xl min-h-[44px]",
                       step === 1 && "invisible"
@@ -1016,7 +1032,7 @@ export default function PostWork() {
                   
                   {step < 3 ? (
                     <button 
-                      onClick={() => setStep(s => Math.min(4, s + 1))}
+                      onClick={() => goToStep(Math.min(4, step + 1))}
                       disabled={isUploadingImage || isUploadingPdf}
                       className={clsx(
                         "bg-slate-900 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold shadow-md hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-1.5 min-h-[44px]",
