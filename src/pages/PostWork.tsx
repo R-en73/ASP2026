@@ -30,6 +30,33 @@ export default function PostWork() {
     });
   };
 
+  const validateStep = (currentStep: number) => {
+    if (currentStep === 1) {
+      if (!formData.authorName.trim()) {
+        toast.error('制作者名・グループ名を入力してください');
+        return false;
+      }
+      if (!formData.title.trim()) {
+        toast.error('作品のタイトルを入力してください');
+        return false;
+      }
+      if (!formData.catchphrase.trim()) {
+        toast.error('一言説明を入力してください');
+        return false;
+      }
+    }
+    if (currentStep === 2 && !formData.description.trim()) {
+      toast.error('紹介コメントを入力してください');
+      return false;
+    }
+    return true;
+  };
+
+  const goForward = () => {
+    if (!validateStep(step)) return;
+    goToStep(Math.min(4, step + 1));
+  };
+
   const getInitialFormData = (currUser: any) => ({
     title: '',
     catchphrase: '',
@@ -384,6 +411,10 @@ export default function PostWork() {
       toast.error('ゲストアカウントは作品の保存ができません');
       return;
     }
+    if (!validateStep(1) || !validateStep(2)) {
+      goToStep(!formData.authorName.trim() || !formData.title.trim() || !formData.catchphrase.trim() ? 1 : 2);
+      return;
+    }
     
     // Determine unique booth ID for THIS user
     let targetBoothId = currentBoothId;
@@ -492,7 +523,7 @@ export default function PostWork() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-12 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 pt-4 sm:pt-8 pb-24 relative overflow-x-hidden">
       {/* Decorative blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-cyan-200 to-transparent rounded-bl-full -z-10 opacity-40"></div>
       <div className="absolute top-1/2 left-0 w-96 h-96 bg-gradient-to-tr from-pink-200 to-transparent rounded-tr-full -z-10 opacity-30"></div>
@@ -500,10 +531,11 @@ export default function PostWork() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight flex items-center gap-4 relative">
-             <span className="text-cyan-500 font-cursive text-3xl absolute -top-6 left-0 transform -rotate-12">MY PAGE</span>
-             マイページ<span className="text-pink-500">（作品編集）</span>
+        <div className="mb-6 sm:mb-10">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight flex flex-wrap items-baseline gap-x-2 gap-y-1 relative pt-7 sm:pt-0">
+             <span className="text-cyan-500 font-cursive text-xl sm:text-3xl absolute -top-1 sm:-top-6 left-0 transform -rotate-12">MY PAGE</span>
+             <span>マイページ</span>
+             <span className="text-pink-500 text-xl sm:text-4xl md:text-5xl">（作品編集）</span>
           </h1>
           <p className="mt-4 text-slate-600 font-medium max-w-xl leading-relaxed">
             {currentBoothId 
@@ -514,8 +546,8 @@ export default function PostWork() {
 
         {/* Ownership Status Banner */}
         {currentBoothId ? (
-          <div className="mb-8 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-            <div className="flex items-center gap-3.5">
+          <div className="mb-6 sm:mb-8 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex w-full items-start gap-3.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
                 <Sparkles className="w-3.5 h-3.5" />
                 出展中（公開中）
@@ -529,10 +561,10 @@ export default function PostWork() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:justify-end">
               <Link 
                 to={`/booths/${currentBoothId}`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 hover:text-emerald-700 transition-colors shadow-xs"
+                className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 hover:text-emerald-700 transition-colors shadow-xs min-h-[44px]"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
                 公開ページを見る
@@ -540,7 +572,7 @@ export default function PostWork() {
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors min-h-[44px]"
                 title="この作品を削除"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -615,7 +647,7 @@ export default function PostWork() {
                           value={formData.authorName}
                           onChange={e => setFormData({...formData, authorName: e.target.value})}
                           placeholder="例: 山田 太郎" 
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:border-cyan-500 transition-colors"
+                          className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3 focus:outline-none focus:ring-2 focus:border-cyan-500 transition-colors"
                         />
                       </div>
                       
@@ -629,7 +661,7 @@ export default function PostWork() {
                           value={formData.courseName}
                           onChange={e => setFormData({...formData, courseName: e.target.value})}
                           placeholder="例: ITエンジニア科" 
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:border-cyan-500 transition-colors"
+                          className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3 focus:outline-none focus:ring-2 focus:border-cyan-500 transition-colors"
                         />
                       </div>
 
@@ -643,7 +675,7 @@ export default function PostWork() {
                           value={formData.grade}
                           onChange={e => setFormData({...formData, grade: e.target.value})}
                           placeholder="例: 1年" 
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:border-cyan-500 transition-colors"
+                          className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3 focus:outline-none focus:ring-2 focus:border-cyan-500 transition-colors"
                         />
                       </div>
                     </div>
@@ -662,7 +694,8 @@ export default function PostWork() {
                         value={formData.title}
                         onChange={e => setFormData({...formData, title: e.target.value})}
                         placeholder="作品のタイトルを入力してください" 
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors"
+                        maxLength={100}
+                        className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors"
                       />
                       <div className="text-right text-xs text-slate-400 font-medium mt-2">{formData.title.length}/100</div>
                     </div>
@@ -682,7 +715,8 @@ export default function PostWork() {
                         value={formData.catchphrase}
                         onChange={e => setFormData({...formData, catchphrase: e.target.value})}
                         placeholder="この作品の魅力をひとことで表すと..." 
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors resize-none"
+                        maxLength={200}
+                        className="w-full min-h-[96px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors resize-none"
                       ></textarea>
                       <div className="text-right text-xs text-slate-400 font-medium mt-2">{formData.catchphrase.length}/200</div>
                     </div>
@@ -706,7 +740,8 @@ export default function PostWork() {
                         value={formData.description}
                         onChange={e => setFormData({...formData, description: e.target.value})}
                         placeholder="この作品を制作したきっかけ、こだわったポイント、見どころなどを教えてください。" 
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors resize-none"
+                        maxLength={1000}
+                        className="w-full min-h-[144px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors resize-none"
                       ></textarea>
                       <div className="text-right text-xs text-slate-400 font-medium mt-2">{formData.description.length}/1000</div>
                     </div>
@@ -721,7 +756,7 @@ export default function PostWork() {
                       <select 
                         value={formData.tags}
                         onChange={e => setFormData({...formData, tags: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors"
+                        className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors"
                       >
                         <option value="展示">展示</option>
                         <option value="体験">体験</option>
@@ -751,8 +786,8 @@ export default function PostWork() {
                             alt="サムネイルプレビュー" 
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                            <label className="cursor-pointer bg-white text-slate-800 text-xs font-bold px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors">
+                          <div className="absolute inset-0 bg-slate-900/60 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 sm:gap-3 p-3">
+                            <label className="cursor-pointer bg-white text-slate-800 text-xs font-bold px-3 sm:px-4 py-2.5 rounded-xl hover:bg-slate-100 transition-colors min-h-[44px] flex items-center">
                               画像を変更
                               <input 
                                 type="file" 
@@ -764,7 +799,7 @@ export default function PostWork() {
                             <button
                               type="button"
                               onClick={() => setFormData({ ...formData, thumbnailUrl: '' })}
-                              className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                              className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 sm:px-4 py-2.5 rounded-xl transition-colors min-h-[44px]"
                             >
                               画像を削除
                             </button>
@@ -835,7 +870,7 @@ export default function PostWork() {
                         value={formData.thumbnailUrl}
                         onChange={e => setFormData({...formData, thumbnailUrl: e.target.value})}
                         placeholder="https://... (画像のURLを入力)" 
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                        className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                       />
                     </div>
                     
@@ -901,7 +936,7 @@ export default function PostWork() {
                                   value={pdf.name || ''}
                                   onChange={e => handlePdfChange(index, 'name', e.target.value)}
                                   placeholder="例：作品の企画書" 
-                                  className="w-full bg-white border border-slate-200 text-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                                  className="w-full min-h-[48px] text-base bg-white border border-slate-200 text-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                                 />
                               </div>
                               <div>
@@ -911,7 +946,7 @@ export default function PostWork() {
                                   value={pdf.url || ''}
                                   onChange={e => handlePdfChange(index, 'url', e.target.value)}
                                   placeholder="https://... (PDFのURL)" 
-                                  className="w-full bg-white border border-slate-200 text-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                                  className="w-full min-h-[48px] text-base bg-white border border-slate-200 text-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                                 />
                               </div>
                             </div>
@@ -945,7 +980,7 @@ export default function PostWork() {
                               value={yt}
                               onChange={e => handleArrayChange('youtubes', index, e.target.value)}
                               placeholder="https://youtube.com/... (YouTube動画のURL)" 
-                              className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 pr-10"
+                              className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 pr-10"
                             />
                           </div>
                         ))}
@@ -978,7 +1013,7 @@ export default function PostWork() {
                               value={link}
                               onChange={e => handleArrayChange('externalLinks', index, e.target.value)}
                               placeholder="https://... (ポートフォリオやGitHubなどのURL)" 
-                              className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 pr-10"
+                              className="w-full min-h-[48px] text-base bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 sm:px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 pr-10"
                             />
                           </div>
                         ))}
@@ -1032,7 +1067,7 @@ export default function PostWork() {
                   
                   {step < 3 ? (
                     <button 
-                      onClick={() => goToStep(Math.min(4, step + 1))}
+                      onClick={goForward}
                       disabled={isUploadingImage || isUploadingPdf}
                       className={clsx(
                         "bg-slate-900 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold shadow-md hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-1.5 min-h-[44px]",
@@ -1062,7 +1097,7 @@ export default function PostWork() {
           <div className="w-full lg:w-[380px] flex-shrink-0 space-y-6">
             
             {/* Preview Card */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sticky top-28">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 sm:p-6 lg:sticky lg:top-28">
                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                  <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center">
                    <ImageIcon className="w-4 h-4" />
@@ -1122,7 +1157,7 @@ export default function PostWork() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
             <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-7 h-7" />
             </div>
